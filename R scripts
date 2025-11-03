@@ -1,0 +1,1199 @@
+
+################### BIOSTATISTIC'S ASSIGNMENT ABHISHEK KUMAR GOYAL (21007)####################
+
+install.packages("Seurat")
+install.packages("reshape")
+install.packages("BiocManager")
+install.packages("ggrepel")
+install.packages("corrplot")
+install.packages("pheatmap")
+BiocManager::install("ComplexHeatmap")
+
+BiocManager::install("org.Hs.eg.db")
+BiocManager::install('PCAtools')
+install.packages("rlang")
+install.packages("gplots")
+install.packages("factoextra")
+install.packages("corrr")
+install.packages("ggcorrplot")
+install.packages("FactoMineR")
+
+
+
+
+library(corrr)
+library(ggcorrplot)
+library(ggplot2)
+library(FactoMineR)
+library(PCAtools)
+library(reshape)
+library(org.Hs.eg.db)
+library(tibble)
+library(dplyr)
+library(ggplot2)
+library(gplots)
+library(ggrepel)
+library(pheatmap)
+library(rlang)
+library(factoextra)
+library(vctrs)
+
+
+setwd("/Applications/Biology 8th semester /Biostatistics /biostat_project /rna_seq")
+
+
+A <-list.files(pattern = ".htseq",ignore.case = TRUE)
+
+for(i in 1:length(A)){
+  assign(A[i],read.table(A[i]))
+}
+
+m=merge(SRR2166624.htseq,SRR2166625.htseq,by="V1")
+for(i in 3:length(A)){
+  m=merge(m,get(A[i]),by='V1')
+}
+###names of the cell lines in the same order as given in A object
+mydfname=c("genes","MT4","HSB2","HT1080","RAJI","CEM_SS","DAUDI","C8166","RAMOS","IMR90","CEM_A_301","CEM_X_174","WI38","JURKAT_E6.1","bl41","Jurkat_tag")
+###Giving the names to the 'm' dataframe
+colnames(m)=mydfname
+write.table(m,file="myfinal_df.txt",quote=F,sep="\t",row.names = F,col.names = T)
+### keeping the value of m in A
+
+
+View(m)
+A <- m[6:58307,]
+Genes<- A[,1]
+head(Genes)
+##getting the sum of each column
+X <- sapply(A[2:16], sum)
+X
+##normalizing the data
+B<-sweep(A[,2:16], 2, X, FUN = "/")
+View(D)
+
+
+library("AnnotationDbi")
+library("org.Hs.eg.db")
+library("BiocManager")
+
+
+D<- cbind(Genes, B)
+D$genename <- mapIds(org.Hs.eg.db, keys = D$Genes, keytype = "ENSEMBL", column = "SYMBOL")
+
+head(D)
+write.table(D,file="myfinal_df_norm.txt",quote=F,sep="\t",row.names = F,col.names = T)
+G<- read.table("myfinal_df_norm.txt", header = T)
+
+
+head(G)
+write.table(G, "final_data.tsv", sep = "\t", row.names = FALSE, quote = FALSE)
+
+
+library(gtable)
+# Load necessary package
+library(ggplot2)
+
+# Load the data from a tab-separated file
+infr <- read.table("/Applications/Biology 8th semester /Biostatistics /biostat_project /rna_seq/infect.txt", 
+                   header = FALSE, sep = "\t", stringsAsFactors = FALSE)
+
+# Rename columns
+colnames(infr) <- c("Sample_ID", "Expression", "Cell_Line")
+
+write.csv("G")
+
+# Check if the data is correctly read
+print(head(infr))  # View the first few rows
+print(str(infr))   # Check data structure
+
+# Define colors (Ensure it matches the number of unique cell lines)
+unique_cells <- unique(infr$Cell_Line)
+num_cells <- length(unique_cells)
+Col_v4 <- c("red", "green", "red", "red", "green",
+            "red", "red", "green", "red", "green",
+            "red", "red", "blue", "green", "blue")
+
+# Adjust colors dynamically if mismatch
+if (num_cells > length(Col_v4)) {
+  Col_v4 <- rep(Col_v4, length.out = num_cells)  # Extend colors
+} else if (num_cells < length(Col_v4)) {
+  Col_v4 <- Col_v4[1:num_cells]  # Trim colors
+}
+
+# Create color mapping for each cell line
+color_mapping <- setNames(Col_v4, unique_cells)
+
+# Create the plot
+p <- ggplot(infr, aes(x = reorder(Cell_Line, +Expression), y = Expression, fill = Cell_Line)) +
+  geom_col() +  # `geom_col()` is correct here
+  scale_fill_manual(values = color_mapping) +  # Assign colors correctly
+  xlab("Cell Lines") + 
+  ylab("Nef+/Nef- Infectivity Ratio") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Adjust for better readability
+
+# Print the plot (important for scripts)
+print(p)
+
+##subset the serinc5 gene
+srinc5=G[G$Genes=="ENSG00000164300",]
+serin=t(srinc5)
+w<- as.numeric(serin[2:16])
+corer<- cbind(infr,w)
+
+str(srinc5)
+
+
+
+ggplot(corer, aes(x = Expression, y = w)) +
+  geom_point(aes(color = Cell_Line, size = 1.5), alpha = 0.5) +  
+  scale_color_manual(values = Col_v4) +  
+  labs(x = "Nef Ratio", y = "SERINC5 Expression") +
+  geom_smooth(method = "lm", se = FALSE) +  
+  theme_minimal()
+
+
+
+
+
+##########################################################################################################################################################################
+##########################################################################################################################################################################
+##########################################################################################################################################################################
+
+
+#######  Compute Kurtosis for Each Cell Line
+
+
+
+# Install moments packages 
+install.packages("moments")
+
+# Load the package
+library(moments)
+
+# Select only the cell line data (assuming columns 2 to 16 are cell lines)
+cell_line_data <- A[, 2:16]
+
+# Check the structure of the extracted data
+str(cell_line_data)
+
+#  compute kurtosis for each column
+kurtosis_values <- apply(cell_line_data, 2, kurtosis)
+
+# View the result
+print(kurtosis_values)
+
+
+library(ggplot2)
+
+# Convert to data frame
+kurtosis_df <- data.frame(
+  CellLine = names(kurtosis_values),
+  Kurtosis = as.numeric(kurtosis_values)
+)
+
+# Barplot using ggplot2
+ggplot(kurtosis_df, aes(x = CellLine, y = Kurtosis, fill = Kurtosis)) +
+  geom_bar(stat = "identity") +
+  geom_hline(yintercept = 3, color = "red", linetype = "dashed") +
+  labs(title = "Kurtosis of Gene Expression in Cell Lines",
+       x = "Cell Line",
+       y = "Kurtosis") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_gradient(low = "skyblue", high = "darkblue")
+
+
+#####################################################################################################################################################################
+##########################################################################################################################################################################
+##########################################################################################################################################################################
+
+
+
+
+
+
+A$gene_names <- mapIds(org.Hs.eg.db, keys=A$genes, keytype="ENSEMBL", column="SYMBOL") # adding new column with gene names
+A[is.na(A$gene_names),17] <- "Unknown" # unknown gene names are converted to NA # adding new column gene names from accession num
+cdf <- as.data.frame(sapply(A[,c(-1,-17)], as.numeric))
+cdf %>% mutate(zc = rowSums(. == 0)) -> cdf # counting zeros row wise
+nonzero_cdf <- cdf[cdf$zc < 7,][-16] # filtering genes with non-zero expression in at least 50% cell lines
+head(nonzero_cdf,10)
+
+head(A)
+
+# Plotting overall expression of significant genes profile as heatmap
+my_colors <- colorRampPalette(c("black", "black","brown","orange","yellow","white"))
+heatmap(as.matrix(nonzero_cdf[order(nonzero_cdf$IMR90, decreasing = TRUE), ][0:1000,0:15]), col=my_colors(1000))
+legend(x="right", legend=c("min", "med low", "med high", "max"),fill=my_colors(4))
+
+
+colnames(A)[6] <- "CEM SS"
+colnames(A)[11] <- "CEM A 301"
+colnames(A)[12] <- "CEM X 174"
+
+colnames(A)[14] <- "JURKAT E6.1"
+colnames(A)[16] <-"Jurkat tag"
+  
+  
+#Normalizing data -> getting RPM values
+
+  # Load required libraries
+  library(dplyr)
+  
+  # Read the infect_data file
+  infect_data <- read.table("/Applications/Biology 8th semester /Biostatistics /biostat_project /rna_seq/infect.txt", 
+                            header = FALSE, sep = "\t", stringsAsFactors = FALSE)
+  
+  # Ensure 'A' is correctly loaded before using it
+  rpm_df <- A  
+  
+  # Convert specified columns to RPM (Reads Per Million)
+  for (name in colnames(rpm_df)[c(-17, -1)]) {
+    col_total <- sum(as.numeric(rpm_df[[name]]), na.rm = TRUE)  # Handle missing values safely
+    if (col_total > 0) {
+      rpm_df[[name]] <- (rpm_df[[name]] * 1e6) / col_total
+    }
+  }
+  
+  # Ensure column names exist in 'rpm_df' and 'infect_data'
+  if (!"V3" %in% colnames(infect_data) || !"V2" %in% colnames(infect_data)) {
+    stop("Columns V2 or V3 not found in infect_data")
+  }
+  
+  # Arrange infect_data by V2 and extract sorted column names
+  sorted_colnames <- infect_data %>% arrange(V2) %>% pull(V3)
+  
+  # Find missing cell lines (present in infect_data but not in rpm_df)
+  missing_cols <- setdiff(sorted_colnames, colnames(rpm_df))
+  
+  # Add missing columns to rpm_df with NA values
+  for (col in missing_cols) {
+    rpm_df[[col]] <- NA
+  }
+  
+  # Reorder columns to match the sorted order from infect_data
+  valid_cols <- intersect(sorted_colnames, colnames(rpm_df))
+  rpm_df <- rpm_df[, c("genes", valid_cols, "gene_names")]
+  
+  # View final dataframe
+  head(rpm_df)
+  
+  ############################################################################################################
+  ###plotting the serinc5 expression in acrosss the cell line (heatmap)
+  str(rpm_df)
+  
+  
+  
+  # Load libraries 
+  library(ggplot2)
+  library(dplyr)
+  library(tidyr)
+  
+  # Filter SERINC5 and reshape
+  serinc5_data <- rpm_df %>%
+    dplyr::filter(genes == "ENSG00000164300") %>%
+    dplyr::select(-genes) %>%  # Explicitly call dplyr's select
+    pivot_longer(cols = -gene_names,
+                 names_to = "Cell_Line",
+                 values_to = "Expression")
+  
+  # Add a label column (optional, for cleaner y-axis)
+  serinc5_data$Gene <- "SERINC5"
+  
+  # Plot heatmap
+  ggplot(serinc5_data, aes(x = Cell_Line, y = Gene, fill = Expression)) +
+    geom_tile(color = "white", linewidth = 0.6) +
+    scale_fill_gradient(low = "lightblue", high = "red") +
+    labs(title = "Heatmap of SERINC5 Expression Across Cell Lines",
+         x = "Cell Line",
+         y = NULL,
+         fill = "Expression (RPM)") +
+    theme_minimal(base_size = 14) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          panel.grid = element_blank())
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  # Correlation Plot
+  
+  d <- cor(rpm_df[,c(-1,-17)])
+  library(corrplot)
+  suppressWarnings(corrplot(d))
+  
+  
+ ######################################################################################################################################################################## 
+  
+  ###Establishing correlation of infect ratio with expression data
+  
+  
+  
+  
+
+  find_cor <- function(onerow, methodname){
+    sorted_infect_ratio <- arrange(infect_data,V2)$V2
+    cor_value <- suppressWarnings(cor.test(sorted_infect_ratio,as.numeric(as.vector(unlist(onerow))[c(-1,-17)]), method=methodname))
+    return(as.numeric(cor_value$estimate))
+  }
+  find_cor_p_val <- function(onerow, methodname){
+    sorted_infect_ratio <- arrange(infect_data,V2)$V2
+    cor_value <- suppressWarnings(cor.test(sorted_infect_ratio,as.numeric(as.vector(unlist(onerow))[c(-1,-17)]), method=methodname))
+    return(as.numeric(cor_value$p.value))
+  }
+  
+  
+  
+  
+  shapiro.test(as.vector(unlist(rpm_df[rpm_df$gene_names=="HIRA",][2:16])))
+  
+  
+  ######################################################################################################################################################################## 
+  
+  
+  #Kendall correlation test [ non-parametric ] & Multiple testing correction
+  result_df <- rpm_df
+  result_df$cor_with_infect_ratio <- as.vector(apply(rpm_df,1,find_cor, methodname="kendall"))
+  result_df$cor_with_p_val <- as.vector(apply(rpm_df,1,find_cor_p_val, methodname="kendall"))
+  result_df$cor_with_p_val_adjusted <- p.adjust(result_df$cor_with_p_val, method = "bonferroni")
+  kendall_result_df_sorted <- arrange(result_df, desc(cor_with_infect_ratio))
+  kendall_result_df_sorted <- subset(kendall_result_df_sorted, !is.na(cor_with_infect_ratio))
+  kendall_result_df_sorted <- kendall_result_df_sorted[kendall_result_df_sorted$gene_names != "Unknown",]
+  head(kendall_result_df_sorted,10)
+  
+  
+  
+  ######################################################################################################################################################################## 
+  
+  #Pearson correlation test [ non-parametric ] & Multiple testing correction
+  
+  
+  result_df <- rpm_df
+  result_df$cor_with_infect_ratio <- as.vector(apply(rpm_df,1,find_cor, methodname="pearson"))
+  result_df$cor_with_p_val <- as.vector(apply(rpm_df,1,find_cor_p_val, methodname="pearson"))
+  result_df$cor_with_p_val_adjusted <- p.adjust(result_df$cor_with_p_val, method = "bonferroni")
+  pearson_result_df_sorted <- arrange(result_df, desc(cor_with_infect_ratio))
+  pearson_result_df_sorted <- subset(pearson_result_df_sorted, !is.na(cor_with_infect_ratio))
+  pearson_result_df_sorted <- pearson_result_df_sorted[pearson_result_df_sorted$gene_names != "Unknown",]
+  head(pearson_result_df_sorted,10)
+  
+  #Spearman correlation test [ non-parametric ] & Multiple testing correction
+  
+  
+  
+  # Spearman correlation test [ non-parametric ] & Multiple testing correction
+  result_df <- rpm_df
+  result_df$cor_with_infect_ratio <- as.vector(apply(rpm_df,1,find_cor, methodname="spearman"))
+  result_df$cor_with_p_val <- as.vector(apply(rpm_df,1,find_cor_p_val, methodname="spearman"))
+  result_df$cor_with_p_val_adjusted <- p.adjust(result_df$cor_with_p_val, method = "bonferroni")
+  
+  # Remove NA values and genes labeled as "Unknown"
+  result_df <- subset(result_df, !is.na(cor_with_infect_ratio) & gene_names != "Unknown")
+  
+  # Sort by correlation (Descending for top positive, Ascending for top negative)
+  top_positive_genes <- result_df[order(-result_df$cor_with_infect_ratio), ][1:10, ]  # Top 10 positive
+  top_negative_genes <- result_df[order(result_df$cor_with_infect_ratio), ][1:10, ]  # Top 10 negative
+  
+  # Display the results
+  
+  print(top_positive_genes$gene_names)
+  
+  
+  print(top_negative_genes$gene_names)
+  
+ print(top_positive_genes$gene_names)
+  
+  library(ggplot2)
+  
+  ggplot(data = NULL, aes(x = infect_data$V2, 
+                          y = as.numeric(as.vector(unlist(rpm_df[rpm_df$gene_names == "HIRA", 2:16]))))) +
+    geom_point() +
+    geom_smooth(method = "lm", color = "red") +
+    labs(title = "Correlation of HIRA Expression with Infection Ratio", 
+         x = "Infection Ratio", y = "Expression (RPM)") +
+    theme_minimal()
+  
+ library(ggplot2)
+  
+  ggplot(data = NULL, aes(x = infect_data$V2, 
+                          y = as.numeric(as.vector(unlist(rpm_df[rpm_df$gene_names == "MTRFR", 2:16]))))) +
+    geom_point() +
+    geom_smooth(method = "lm", color = "red") +
+    labs(title = "Correlation of MTRFR Expression with Infection Ratio", 
+         x = "Infection Ratio", y = "Expression (RPM)") +
+    theme_minimal()
+  
+library(ggplot2)
+  
+  ggplot(data = NULL, aes(x = infect_data$V2, 
+                          y = as.numeric(as.vector(unlist(rpm_df[rpm_df$gene_names ==  "PPP2R1B", 2:16]))))) +
+    geom_point() +
+    geom_smooth(method = "lm", color = "red") +
+    labs(title = "Correlation of PPP2R1B Expression with Infection Ratio", 
+         x = "Infection Ratio", y = "Expression (RPM)") +
+    theme_minimal()
+  
+library(ggplot2)
+  
+  ggplot(data = NULL, aes(x = infect_data$V2, 
+                          y = as.numeric(as.vector(unlist(rpm_df[rpm_df$gene_names ==  "KLHL15", 2:16]))))) +
+    geom_point() +
+    geom_smooth(method = "lm", color = "red") +
+    labs(title = "Correlation of KLHL15 Expression with Infection Ratio", 
+         x = "Infection Ratio", y = "Expression (RPM)") +
+    theme_minimal()
+  
+library(ggplot2)
+  
+  ggplot(data = NULL, aes(x = infect_data$V2, 
+                          y = as.numeric(as.vector(unlist(rpm_df[rpm_df$gene_names ==  "GNPAT", 2:16]))))) +
+    geom_point() +
+    geom_smooth(method = "lm", color = "red") +
+    labs(title = "Correlation of GNPAT Expression with Infection Ratio", 
+         x = "Infection Ratio", y = "Expression (RPM)") +
+    theme_minimal()
+  
+library(ggplot2)
+  
+  ggplot(data = NULL, aes(x = infect_data$V2, 
+                          y = as.numeric(as.vector(unlist(rpm_df[rpm_df$gene_names ==  "RBBP4", 2:16]))))) +
+    geom_point() +
+    geom_smooth(method = "lm", color = "red") +
+    labs(title = "Correlation of RBBP4 Expression with Infection Ratio", 
+         x = "Infection Ratio", y = "Expression (RPM)") +
+    theme_minimal()
+  
+library(ggplot2)
+  
+  ggplot(data = NULL, aes(x = infect_data$V2, 
+                          y = as.numeric(as.vector(unlist(rpm_df[rpm_df$gene_names ==  "UCK2", 2:16]))))) +
+    geom_point() +
+    geom_smooth(method = "lm", color = "red") +
+    labs(title = "Correlation of UCK2 Expression with Infection Ratio", 
+         x = "Infection Ratio", y = "Expression (RPM)") +
+    theme_minimal()
+library(ggplot2)
+  
+  ggplot(data = NULL, aes(x = infect_data$V2, 
+                          y = as.numeric(as.vector(unlist(rpm_df[rpm_df$gene_names ==  "DUTP6", 2:16]))))) +
+    geom_point() +
+    geom_smooth(method = "lm", color = "red") +
+    labs(title = "Correlation of DUTP6 Expression with Infection Ratio", 
+         x = "Infection Ratio", y = "Expression (RPM)") +
+    theme_minimal()
+  
+library(ggplot2)
+  
+  ggplot(data = NULL, aes(x = infect_data$V2, 
+                          y = as.numeric(as.vector(unlist(rpm_df[rpm_df$gene_names ==  "PRUNE1", 2:16]))))) +
+    geom_point() +
+    geom_smooth(method = "lm", color = "red") +
+    labs(title = "Correlation of PRUNE1 Expression with Infection Ratio", 
+         x = "Infection Ratio", y = "Expression (RPM)") +
+    theme_minimal()
+  
+library(ggplot2)
+  
+  ggplot(data = NULL, aes(x = infect_data$V2, 
+                          y = as.numeric(as.vector(unlist(rpm_df[rpm_df$gene_names ==  "ZNF837", 2:16]))))) +
+    geom_point() +
+    geom_smooth(method = "lm", color = "red") +
+    labs(title = "Correlation of ZNF837 Expression with Infection Ratio", 
+         x = "Infection Ratio", y = "Expression (RPM)") +
+    theme_minimal()
+  
+  
+  print(top_negative_genes$gene_names)
+  
+  
+library(ggplot2)
+  
+  ggplot(data = NULL, aes(x = infect_data$V2, 
+                          y = as.numeric(as.vector(unlist(rpm_df[rpm_df$gene_names ==  "STEAP2", 2:16]))))) +
+    geom_point() +
+    geom_smooth(method = "lm", color = "red") +
+    labs(title = "Correlation of STEAP Expression with Infection Ratio", 
+         x = "Infection Ratio", y = "Expression (RPM)") +
+    theme_minimal()
+  
+  
+library(ggplot2)
+  
+  ggplot(data = NULL, aes(x = infect_data$V2, 
+                          y = as.numeric(as.vector(unlist(rpm_df[rpm_df$gene_names ==  "RPS27L" , 2:16]))))) +
+    geom_point() +
+    geom_smooth(method = "lm", color = "red") +
+    labs(title = "Correlation of RPS27L  Expression with Infection Ratio", 
+         x = "Infection Ratio", y = "Expression (RPM)") +
+    theme_minimal()
+  
+  
+ library(ggplot2)
+  
+  ggplot(data = NULL, aes(x = infect_data$V2, 
+                          y = as.numeric(as.vector(unlist(rpm_df[rpm_df$gene_names ==  "VMP1" , 2:16]))))) +
+    geom_point() +
+    geom_smooth(method = "lm", color = "red") +
+    labs(title = "Correlation of VMP1  Expression with Infection Ratio", 
+         x = "Infection Ratio", y = "Expression (RPM)") +
+    theme_minimal()
+  
+  
+library(ggplot2)
+  
+  ggplot(data = NULL, aes(x = infect_data$V2, 
+                          y = as.numeric(as.vector(unlist(rpm_df[rpm_df$gene_names ==  "ANXA4" , 2:16]))))) +
+    geom_point() +
+    geom_smooth(method = "lm", color = "red") +
+    labs(title = "Correlation of ANXA4  Expression with Infection Ratio", 
+         x = "Infection Ratio", y = "Expression (RPM)") +
+    theme_minimal()
+  
+library(ggplot2)
+  
+  ggplot(data = NULL, aes(x = infect_data$V2, 
+                          y = as.numeric(as.vector(unlist(rpm_df[rpm_df$gene_names ==  "MEGF8" , 2:16]))))) +
+    geom_point() +
+    geom_smooth(method = "lm", color = "red") +
+    labs(title = "Correlation of MEGF8  Expression with Infection Ratio", 
+         x = "Infection Ratio", y = "Expression (RPM)") +
+    theme_minimal()
+  
+  
+library(ggplot2)
+  
+  ggplot(data = NULL, aes(x = infect_data$V2, 
+                          y = as.numeric(as.vector(unlist(rpm_df[rpm_df$gene_names ==  "ZNF350" , 2:16]))))) +
+    geom_point() +
+    geom_smooth(method = "lm", color = "red") +
+    labs(title = "Correlation of ZNF350  Expression with Infection Ratio", 
+         x = "Infection Ratio", y = "Expression (RPM)") +
+    theme_minimal()
+  
+ library(ggplot2)
+  
+  ggplot(data = NULL, aes(x = infect_data$V2, 
+                          y = as.numeric(as.vector(unlist(rpm_df[rpm_df$gene_names ==  "ZNF221" , 2:16]))))) +
+    geom_point() +
+    geom_smooth(method = "lm", color = "red") +
+    labs(title = "Correlation of ZNF221  Expression with Infection Ratio", 
+         x = "Infection Ratio", y = "Expression (RPM)") +
+    theme_minimal()
+  
+  
+library(ggplot2)
+  
+  ggplot(data = NULL, aes(x = infect_data$V2, 
+                          y = as.numeric(as.vector(unlist(rpm_df[rpm_df$gene_names ==  "DLGAP1-AS6" , 2:16]))))) +
+    geom_point() +
+    geom_smooth(method = "lm", color = "red") +
+    labs(title = "Correlation of DLGAP-AS6  Expression with Infection Ratio", 
+         x = "Infection Ratio", y = "Expression (RPM)") +
+    theme_minimal()
+  
+  
+ library(ggplot2)
+  
+  ggplot(data = NULL, aes(x = infect_data$V2, 
+                          y = as.numeric(as.vector(unlist(rpm_df[rpm_df$gene_names ==  "TRIM22" , 2:16]))))) +
+    geom_point() +
+    geom_smooth(method = "lm", color = "red") +
+    labs(title = "Correlation of TRIM22  Expression with Infection Ratio", 
+         x = "Infection Ratio", y = "Expression (RPM)") +
+    theme_minimal()
+  
+ library(ggplot2)
+  
+  ggplot(data = NULL, aes(x = infect_data$V2, 
+                          y = as.numeric(as.vector(unlist(rpm_df[rpm_df$gene_names ==  "DUSP10" , 2:16]))))) +
+    geom_point() +
+    geom_smooth(method = "lm", color = "red") +
+    labs(title = "Correlation of DUSP10  Expression with Infection Ratio", 
+         x = "Infection Ratio", y = "Expression (RPM)") +
+    theme_minimal()
+  
+  ################################################################################################################################################################
+  #####################################################################################################################################################################
+  #####################################################
+  #Heatmap of Top Correlated Genes
+  
+  library(pheatmap)
+  
+  # Select only the expression data (columns 2 to 16) for top correlated genes
+  heatmap_data <- rbind(top_positive_genes, top_negative_genes)[, 2:16]  
+  rownames(heatmap_data) <- rbind(top_positive_genes, top_negative_genes)$gene_names
+  
+  # Plot heatmap
+  pheatmap(as.matrix(heatmap_data), scale = "row", 
+           cluster_rows = TRUE, cluster_cols = TRUE, 
+           main = "Expression Heatmap of Top Correlated Genes",
+           color = colorRampPalette(c("blue", "white", "red"))(100))
+  
+  
+  
+  
+  #############################################################################################################################
+  
+  
+  library(tidyr)
+  
+  # Combine top positive and negative genes
+  top_genes <- rbind(top_positive_genes, top_negative_genes)
+  
+  # Convert data to long format for ggplot
+  top_genes_long <- pivot_longer(top_genes, cols = 2:16, names_to = "Sample", values_to = "Expression")
+  
+  # Add infection ratio to the long data
+  top_genes_long$Infection_Ratio <- rep(infect_data$V2, each = nrow(top_genes))
+  
+  # Plot scatter plots for each gene
+  ggplot(top_genes_long, aes(x = Infection_Ratio, y = Expression, color = gene_names)) +
+    geom_point() +
+    geom_smooth(method = "lm", se = FALSE) +
+    facet_wrap(~gene_names, scales = "free_y") +  
+    theme_minimal() +
+    labs(title = "Expression vs. Infection Ratio for Top Correlated Genes",
+         x = "Infection Ratio", y = "Gene Expression (RPM)")
+  
+  
+  
+  
+  #############################################################################################################################
+  ###############################################################################################
+  
+  #Boxplot to Compare Expression Between Top Genes
+  
+  
+  
+  
+  
+  # Add a correlation type column
+  top_positive_genes$Correlation <- "Positive"
+  top_negative_genes$Correlation <- "Negative"
+  
+  # Combine both
+  top_genes <- rbind(top_positive_genes, top_negative_genes)
+  
+  # Convert to long format for ggplot
+  library(tidyr)
+  library(ggplot2)
+  
+  top_genes_long <- pivot_longer(top_genes, cols = 2:16, names_to = "Sample", values_to = "Expression")
+  
+  # Boxplot with color differentiation
+  ggplot(top_genes_long, aes(x = gene_names, y = Expression, fill = Correlation)) +
+    geom_boxplot() +
+    theme_minimal() +
+    coord_flip() +  # Flip for better readability
+    scale_fill_manual(values = c("Positive" = "blue", "Negative" = "red")) +  # Color-coding
+    labs(title = "Expression Distribution of Top Correlated Genes",
+         x = "Gene", y = "Expression (RPM)")
+  
+  
+  
+  ###########################################################################################################################
+  
+  library(Seurat)
+  
+  # Convert dataframe to matrix with genes as row names
+  gene_expression_matrix <- as.matrix(top_genes[, 2:16])
+  rownames(gene_expression_matrix) <- top_genes$gene_names  # Set gene names as row names
+  
+  # Check the matrix structure
+  str(gene_expression_matrix)
+  
+  # Create Seurat object
+  seurat_obj <- CreateSeuratObject(counts = gene_expression_matrix, min.cells = 0, min.features = 0)
+  
+  # Normalize data
+  seurat_obj <- NormalizeData(seurat_obj, normalization.method = "LogNormalize", scale.factor = 10000)
+  
+  
+  seurat_obj <- NormalizeData(seurat_obj)
+  seurat_obj <- FindVariableFeatures(seurat_obj, selection.method = "vst", nfeatures = 2000)
+  seurat_obj <- ScaleData(seurat_obj)
+  seurat_obj <- RunPCA(seurat_obj, npcs = 10)  # Reduce npcs if needed
+  DimPlot(seurat_obj, reduction = "pca")
+  VizDimLoadings(seurat_obj, dims = 1:2)
+  seurat_obj <- RunUMAP(seurat_obj, dims = 1:10)
+  FeaturePlot(seurat_obj, features = top_genes$gene_names, cols = c("lightgrey", "blue"))
+  
+  seurat_obj <- RunUMAP(seurat_obj, dims = 1:10, n.neighbors = 5)
+  DimPlot(seurat_obj, reduction = "umap")
+  
+  
+  ###########################################################################################################################
+  
+  
+  
+  ######################################################################################################################################################################## 
+  
+  
+  
+  
+  
+  options(repr.plot.width=20, repr.plot.height=6)
+  par(mfrow=c(1,2))
+  hist(result_df$cor_with_infect_ratio)
+  hist(pearson_result_df_sorted$cor_with_infect_ratio)
+  
+  
+  rpm_df[rpm_df$gene_names=="SERINC5",]
+  
+  rpm_df[rpm_df$gene_names=="HIRA",]
+  
+  
+  
+  
+  
+  
+  
+  
+  options(repr.plot.width=16, repr.plot.height=6)
+  par(mfrow=c(1,2))
+  SERINC5_expression <- as.vector(unlist(rpm_df[rpm_df$gene_names=="SERINC5",][,c(-1,-17)]))
+  names(SERINC5_expression) <- colnames(rpm_df)[c(-1,-17)]
+  barplot(SERINC5_expression,las=2, col=arrange(infect_data,V2)$V4, main="SERINC5 expression", ylab="RPM expression of SERINC5")
+  HIRA_expression <- as.vector(unlist(rpm_df[rpm_df$gene_names=="HIRA",][,c(-1,-17)]))
+  names(HIRA_expression) <- colnames(rpm_df)[c(-1,-17)]
+  barplot(HIRA_expression,las=2, col=arrange(infect_data,V2)$V4, main="HIRA expression", ylab="RPM expression of HIRA")
+  
+  
+  
+  
+  
+  
+  
+  high_Nef_dependent_cell_lines_HIRA_expression = as.vector(unlist(
+    rpm_df[rpm_df$gene_names=="HIRA",][,c('HSB2','CEM SS','CEM A 301','RAMOS','bl41','JURKAT E6.1')]))
+  low_Nef_dependent_cell_lines_HIRA_expression = as.vector(
+    unlist(rpm_df[rpm_df$gene_names=="HIRA",][,c('HT1080','CEM X 174','IMR90','MT4','DAUDI','WI38','C8166','RAJI')]))
+  wilcox.test(low_Nef_dependent_cell_lines_HIRA_expression,high_Nef_dependent_cell_lines_HIRA_expression, alternative="less")
+  
+  
+  
+  
+  ######################################################################################################################################################################## 
+  
+  
+  #Plotting top positively correlated genes and comparing them with each other
+  
+  
+  
+  correlation_plot <- function(rowdata){
+    gene_expression_rpm <- as.numeric(unlist(rowdata[2:16]))
+    sorted_infect_ratio <- arrange(infect_data, V2)$V2
+    sorted_infect_color <- arrange(infect_data, V2)$V4
+    
+    # Plot
+    plot(
+      sorted_infect_ratio, gene_expression_rpm, 
+      pch = 16, col = sorted_infect_color, 
+      main = rowdata$gene_names, 
+      xlab = "Nef+/Nef- infectivity ratio", 
+      ylab = "Gene Expression (RPM)"
+    )
+    
+    # Add regression line
+    abline(lm(gene_expression_rpm ~ sorted_infect_ratio), col = "darkviolet")
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  #############################################################################################################################################################################################################
+  #############################################################################################################################################################################################################
+  
+  
+  
+  
+  #Top 10 according to Spearman correlation
+  
+  top_positively_correlated <- c(1:10)
+  options(repr.plot.width=18, repr.plot.height=8)
+  # positively correlated vs infectivity ratio
+  par(mfrow=c(2,5))
+  for (i in top_positively_correlated){
+    suppressWarnings(correlation_plot(spearman_result_df_sorted[i,]))
+  }
+  
+  
+  #############################################################################################################################################################################################################
+  ######################################################################################################################################################################## 
+  
+  
+  #Top 10 according to Pearson correlation
+  
+  
+  
+  top_positively_correlated <- c(1:10)
+  options(repr.plot.width=18, repr.plot.height=8)
+  # positively correlated vs infectivity ratio
+  par(mfrow=c(2,5))
+  for (i in top_positively_correlated){
+    suppressWarnings(correlation_plot(pearson_result_df_sorted[i,]))
+  }
+  
+  
+  ######################################################################################################################################################################## 
+  #############################################################################################################################################################################################################
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  # Reset graphics and adjust margins
+  dev.off()
+  par(mar=c(5,5,2,2), mfrow=c(1,2))  # 1 row, 2 columns for two plots
+  
+  # Extract expression values for SERINC5 and HIRA
+  SERINC5_gene_expression_rpm <- as.numeric(unlist(rpm_df[rpm_df$gene_names=="SERINC5",][2:16]))
+  HIRA_gene_expression_rpm <- as.numeric(unlist(rpm_df[rpm_df$gene_names=="HIRA",][2:16]))
+  
+  # Sort infection ratio and color accordingly
+  sorted_infect_ratio <- arrange(infect_data, V2)$V2
+  sorted_infect_color <- arrange(infect_data, V2)$V4
+  
+  # Plot for SERINC5
+  plot(sorted_infect_ratio, SERINC5_gene_expression_rpm, 
+       pch=16, col=sorted_infect_color, 
+       main="SERINC5", 
+       xlab="Nef+/Nef- infectivity ratio", 
+       ylab="SERINC5 Expression (RPM)")
+  abline(lm(SERINC5_gene_expression_rpm ~ sorted_infect_ratio), col="darkviolet")
+  
+  # Plot for HIRA
+  plot(sorted_infect_ratio, HIRA_gene_expression_rpm, 
+       pch=16, col=sorted_infect_color, 
+       main="HIRA", 
+       xlab="Nef+/Nef- infectivity ratio", 
+       ylab="HIRA Expression (RPM)")
+  abline(lm(HIRA_gene_expression_rpm ~ sorted_infect_ratio), col="blue")
+  
+  
+  
+  
+  
+  ######################################################################################################################################################################## 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+##### Perform PCA Using prcomp on Scaled Data
+  
+  # Reuse gene expression matrix
+  gene_expression_matrix <- as.matrix(top_genes[, 2:16])
+  rownames(gene_expression_matrix) <- top_genes$gene_names
+  
+  # Transpose to make samples as rows and genes as columns
+  pca_input <- t(gene_expression_matrix)
+  
+  # Scale and center the data before PCA
+  pca_result <- prcomp(pca_input, scale. = TRUE, center = TRUE)
+  
+  #####Scree Plot (Explained Variance per PC)
+  # Scree plot
+  scree_values <- summary(pca_result)$importance[2, ]  # Proportion of Variance
+  barplot(scree_values,
+          main = "Scree Plot",
+          xlab = "Principal Components",
+          ylab = "Proportion of Variance Explained",
+          col = "steelblue")
+  
+  
+  ############# PCA Loading Plot (PC1 vs PC2 Loadings)
+  
+  # Loadings plot
+  loadings <- pca_result$rotation[, 1:2]  # First 2 PCs
+  plot(loadings, pch = 19, col = "darkgreen",
+       xlab = "PC1 Loadings", ylab = "PC2 Loadings",
+       main = "Loadings Plot (PC1 vs PC2)")
+  text(loadings, labels = rownames(loadings), pos = 3, cex = 0.7)
+  abline(h = 0, v = 0, col = "gray")
+  
+  
+  
+  
+ ################# Pairs Plot of PCs
+  
+  # Pairs plot (first 4 PCs)
+  pairs(pca_result$x[, 1:4],
+        main = "Pairs Plot of Principal Components",
+        pch = 21, bg = "lightblue")
+  
+  
+  
+  
+  # Basic Biplot
+  # Optional: install and use ggbiplot if preferred
+  # install.packages("devtools")
+   devtools::install_github("vqv/ggbiplot")
+  library(ggbiplot)
+  
+   library(ggbiplot)
+   
+   ggbiplot(pca_result,
+            obs.scale = 1,
+            var.scale = 1,
+            labels = rownames(pca_input),
+            groups = NULL,
+            ellipse = FALSE,
+            circle = TRUE,
+            var.axes = TRUE) +
+     ggtitle("Biplot of PCA (Top Correlated Genes)") +
+     theme_minimal() +
+     theme(
+       text = element_text(size = 6),  # Reduce all text size (default ~12, now 6)
+       axis.text = element_text(size = 6),  # Reduce axis labels
+       legend.text = element_text(size = 6),  # Reduce legend text size
+       plot.title = element_text(size = 8, face = "bold")  # Reduce title size slightly
+     )
+  
+  
+ 
+  #######################################################################################################
+  ######################################################################################################
+  #######################################################################################################
+  
+  
+  ###########Gene Ontology (GO) Enrichment
+  # Load libraries
+  if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+  
+  BiocManager::install("clusterProfiler")
+  library(clusterProfiler)
+  library(org.Hs.eg.db)
+  if (!requireNamespace("enrichplot", quietly = TRUE)) BiocManager::install("enrichplot")
+  library(enrichplot)
+  library(ggplot2)
+  
+  gene_symbols <- top_genes$gene_names
+  gene_symbols <- as.character(gene_symbols)
+  
+  gene_entrez <- bitr(gene_symbols,
+                      fromType = "SYMBOL",
+                      toType = "ENTREZID",
+                      OrgDb = org.Hs.eg.db)
+  
+  head(gene_entrez)
+  length(gene_entrez$ENTREZID)
+  
+  ego <- enrichGO(gene          = gene_entrez$ENTREZID,
+                  OrgDb         = org.Hs.eg.db,
+                  keyType       = "ENTREZID",
+                  ont           = "BP",
+                  pAdjustMethod = "BH",
+                  pvalueCutoff  = 0.1,
+                  qvalueCutoff  = 0.5,
+                  readable      = TRUE)
+  
+  
+  head(ego@result)
+  
+  ego_df <- as.data.frame(ego@result)
+  
+  # Take top 10 categories (you can also filter by p.adjust < 0.05 if needed)
+  top_ego_df <- ego_df %>%
+    slice_max(Count, n = 10) %>%
+    mutate(
+      GeneRatio_num = sapply(GeneRatio, function(x) eval(parse(text = x))),
+      Description = factor(Description, levels = rev(Description)),
+      gene_label = gsub("/", ", ", geneID)  # Replace '/' with ', ' for display
+    )
+  
+  # Plot
+  ggplot(top_ego_df, aes(x = GeneRatio_num,
+                         y = Description,
+                         size = Count,
+                         color = -log10(p.adjust))) +
+    geom_point(alpha = 0.8) +
+    geom_text(aes(label = gene_label),
+              hjust = 0, vjust = 0.5, size = 3,
+              nudge_x = 0.01,
+              check_overlap = FALSE) +
+    scale_color_gradient(low = "blue", high = "red") +
+    theme_minimal(base_size = 14) +
+    labs(
+      title = "GO Biological Process Enrichment (Gene Names Shown)",
+      x = "Gene Ratio", y = "GO Term",
+      color = "-log10(adjusted p-value)",
+      size = "Gene Count"
+    ) +
+    theme(
+      plot.title = element_text(face = "bold", hjust = 0.5),
+      axis.text.y = element_text(size = 12)
+    ) +
+    xlim(0, max(top_ego_df$GeneRatio_num) + 0.1)  # Add space for gene labels
+  
+  #####KEGG Pathway Enrichment
+  
+  
+  
+  gene_symbols <- top_genes$gene_names
+  gene_entrez_kegg <- bitr(gene_symbols, fromType="SYMBOL", toType="ENTREZID", OrgDb=org.Hs.eg.db)
+  
+  kegg_enrich <- enrichKEGG(gene         = gene_entrez_kegg$ENTREZID,
+                            organism     = 'hsa',
+                            pvalueCutoff = 0.05)
+  
+  head(kegg_enrich@result)
+  
+  
+  
+  # Step 1: Extract the result and prepare a copy
+  kegg_df <- as.data.frame(kegg_enrich@result)
+  
+  # Step 2: Expand the geneID column
+  kegg_df <- kegg_df %>%
+    mutate(EntrezID = strsplit(as.character(geneID), "/")) %>%
+    tidyr::unnest(EntrezID)
+  
+  # Step 3: Convert Entrez IDs to gene symbols using org.Hs.eg.db
+  kegg_df <- kegg_df %>%
+    left_join(
+      bitr(kegg_df$EntrezID, fromType = "ENTREZID", toType = "SYMBOL", OrgDb = org.Hs.eg.db),
+      by = c("EntrezID" = "ENTREZID")
+    )
+  
+  # Step 4: Re-aggregate gene symbols by pathway
+  kegg_gene_symbols <- kegg_df %>%
+    group_by(ID, Description, Count, RichFactor, p.adjust) %>%
+    summarise(gene_symbol_label = paste(unique(SYMBOL), collapse = ", "), .groups = "drop")
+  
+  # Step 5: For top 10 pathways, make a dot plot with gene names shown
+  top_kegg <- kegg_gene_symbols %>%
+    slice_max(Count, n = 10) %>%
+    mutate(Description = factor(Description, levels = rev(Description)))
+  
+  ggplot(top_kegg, aes(x = RichFactor, y = Description, size = Count, color = -log10(p.adjust))) +
+    geom_point(alpha = 0.8) +
+    geom_text(
+      aes(label = gene_symbol_label),
+      hjust = 0, vjust = 0.5, size = 3,
+      nudge_x = 0.01
+    ) +
+    scale_color_gradient(low = "blue", high = "red") +
+    theme_minimal(base_size = 14) +
+    labs(
+      title = "KEGG Enrichment (Gene Symbols Displayed)",
+      x = "Rich Factor",
+      y = "Pathway",
+      color = "-log10(p.adjust)",
+      size = "Gene Count"
+    ) +
+    theme(
+      plot.title = element_text(face = "bold", hjust = 0.5),
+      axis.text.y = element_text(size = 12)
+    ) +
+    xlim(0, max(top_kegg$RichFactor) + 0.1)
+  
+  
+  #######################################################################################################
+  ######################################################################################################
+  #######################################################################################################
+  
+  # Plot Sankey
+  
+  
+  
+  
+  
+  
+  # Load necessary library
+  install.packages("networkD3")
+  library(networkD3)
+  
+  # Prepare data
+  top_positive_genes$Correlation <- "Positive"
+  top_negative_genes$Correlation <- "Negative"
+  top_genes <- rbind(top_positive_genes, top_negative_genes)
+  
+  # Convert expression to long format
+  library(tidyr)
+  long_df <- pivot_longer(top_genes, cols = 2:16, names_to = "Sample", values_to = "Expression")
+  
+  # Create three levels: Gene -> Correlation -> Sample (optional)
+  long_df$Gene <- long_df$gene_names
+  long_df$CorrelationType <- long_df$Correlation
+  
+  # Filter only high expression genes (to reduce clutter, optional)
+  long_df <- subset(long_df, Expression > 0)
+  
+  # Create a unique list of nodes
+  nodes <- data.frame(name = unique(c(long_df$Gene, long_df$CorrelationType)))
+  
+  # Function to get index of a node
+  get_node_id <- function(x) match(x, nodes$name) - 1  # -1 for 0-based indexing
+  
+  # Create links (Gene → CorrelationType)
+  links <- data.frame(
+    source = get_node_id(long_df$Gene),
+    target = get_node_id(long_df$CorrelationType),
+    value = long_df$Expression
+  )
+  
+  # Group by source and target, aggregate expression
+  library(dplyr)
+  links <- links %>%
+    group_by(source, target) %>%
+    summarise(value = sum(value), .groups = "drop")
+  
+  # Plot Sankey
+  sankeyNetwork(Links = links, Nodes = nodes,
+                Source = "source", Target = "target",
+                Value = "value", NodeID = "name",
+                fontSize = 12, nodeWidth = 30,
+                sinksRight = FALSE)
+  
+  
+  
+  
+  
+  
